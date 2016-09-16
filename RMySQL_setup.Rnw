@@ -1,0 +1,184 @@
+\documentclass[11pt,oneside]{article}
+
+% This package simply sets the margins to be 1 inch.
+\usepackage[margin=1in]{geometry}
+
+% This package makes code look pretty
+\usepackage{listings}
+
+% Include Graphics
+\usepackage{graphicx}
+\usepackage{subfig}
+
+% Put pictures and tables in their correct place.
+\usepackage{float}
+
+% used for wrapping text around figures
+\usepackage{wrapfig}
+
+% Package for creating table
+\usepackage{multirow}
+
+% This removes page numbers.
+%\pagenumbering{gobble}
+
+% These packages include nice commands from AMS-LaTeX
+\usepackage{amssymb,amsmath,amsthm}
+
+% Make the space between lines slightly more
+% generous than normal single spacing, but compensate
+% so that the spacing between rows of matrices still
+% looks normal.  Note that 1.1=1/.9090909...
+\renewcommand{\baselinestretch}{1.1}
+\renewcommand{\arraystretch}{.91}
+
+% Define an environment for exercises.
+\newenvironment{exercise}[1]{\vspace{.5cm}\noindent\textbf{#1 \hspace{.05em}}}{}
+
+% Allow for underlining.
+\usepackage[normalem]{ulem}
+\usepackage{multirow}
+
+% define shortcut commands for commonly used symbols
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\calP}{\mathcal{P}}
+
+
+\DeclareMathOperator{\vsspan}{span}
+
+
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\begin{flushright}
+David Ebert\\
+\today \\
+\end{flushright}
+
+\begin{center}
+\textbf{Tutorial: Connecting R and MySQL} \\
+\end{center}
+
+Here are the steps I used to combine R and MySQL together happily.
+
+\begin{enumerate}
+
+\item Get MySQL and the R package RMySQL.
+
+
+
+\item Create a database in MySQL. Notice that while the syntax for \texttt{CREATE TABLE} is the same as Oracle, the data types are different. In particular, MySQL uses \texttt{TINYINT}, \texttt{SMALLINT}, etc. for integers.
+
+\begin{verbatim}
+$ mysql -u root -p -h localhost
+
+mysql> CREATE DATABASE shop;
+
+mysql> CREATE TABLE inventory
+        (id SMALLINT PRIMARY KEY, 
+        name VARCHAR(50),
+        quantity SMALLINT);
+
+mysql> INSERT INTO inventory VALUES(1, 'Tomato', '10');
+mysql> INSERT INTO inventory VALUES(2, 'Potato', '20');
+mysql> INSERT INTO inventory VALUES(3, 'Rhubarb', '0');
+mysql> INSERT INTO inventory VALUES(4, 'Eggplant', '2');
+mysql> INSERT INTO inventory VALUES(5, 'Brussels Spouts', '15');
+mysql> INSERT INTO inventory VALUES(6, 'Onion', '10');
+
+mysql> SELECT * from inventory;
+
+mysql> DESCRIBE inventory; -- This is a lot like the schema tab in Oracle SQL live
+\end{verbatim}
+
+
+
+
+\item Next, we need to create a user with permission to access the database. To do that, I created a new user in MySQL.\footnote{I'm sure it's possible to skip this step and use root user. But I had trouble with this in R. I guess this workaround is good DBA practice.} 
+
+\begin{verbatim}
+$ mysql -u root -p -h localhost
+
+mysql> CREATE USER 'dangle'@'localhost' IDENTIFIED BY 'dongle'; 
+mysql>   -- username is dangle. password is dongle.
+mysql> GRANT ALL PRIVILEGES ON shop.* TO 'francesco'@'localhost';
+mysql> quit;
+\end{verbatim}
+
+
+We can now access the database directly through R. But if you want to log in to MySQL as dangle, you would use the following command before entering the password:
+
+\begin{verbatim}
+$ mysql -u dangle -p -h localhost
+\end{verbatim}
+
+
+
+\item We're now ready to use R. First, we need to create a database connection, which we'll name \texttt{dbcon}:
+
+<<>>=
+library(RMySQL)
+dbcon = dbConnect(MySQL(), user = 'dangle', 
+                 password = 'dongle', 
+                 dbname = 'shop', 
+                 host = '127.0.0.1')
+@
+
+
+
+\item Now we're ready. First, let's look at the tables in the database, and then the columns in the inventory.
+
+<<>>=
+dbListTables(dbcon)
+dbListFields(dbcon, 'inventory')
+@
+
+
+\vspace{25 pt}
+Next, let's bring the table data into R. 
+
+<<>>=
+inventory_table = dbReadTable(dbcon, "inventory")
+inventory_table
+@
+
+
+\vspace{25 pt}
+We can go the other way, too. Let's create a new table in R, called \texttt{employee} and send that table to the \texttt{shop} database.
+
+<<>>=
+fname = c("Alice", "Bob", "Charlie", "Dave")
+lname = c("Alvarez", "Brown", "Chaplin", "Dangle")
+employee = data.frame(lname, fname)
+employee
+
+dbWriteTable(dbcon, "employee", 
+             employee, 
+             overwrite = TRUE, 
+             append = FALSE)
+@
+
+
+\vspace{25 pt}
+Finally, let's send queries to the database from within R. First we send a query to SQL. Then the \texttt{fetch} command imports the table into R. 
+
+<<>>=
+sql_query = dbSendQuery(dbcon, 
+                        'SELECT name, quantity 
+                        FROM inventory 
+                        WHERE quantity > 8')
+sql_query
+
+inventory_table = fetch(sql_query, n=-1)
+inventory_table
+
+on.exit(dbDisconnect(dbcon))
+@
+\end{enumerate}
+
+\end{document}
