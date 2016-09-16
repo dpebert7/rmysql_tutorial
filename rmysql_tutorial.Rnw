@@ -106,7 +106,7 @@ $ mysql -u root -p -h localhost
 
 mysql> CREATE USER 'dangle'@'localhost' IDENTIFIED BY 'dongle'; 
 mysql>   -- username is dangle. password is dongle.
-mysql> GRANT ALL PRIVILEGES ON shop.* TO 'francesco'@'localhost';
+mysql> GRANT ALL PRIVILEGES ON shop.* TO 'dangle'@'localhost';
 mysql> quit;
 \end{verbatim}
 

@@ -6,3 +6,4 @@ rmysql_tutorial-concordance.tex
 .gitignore.swp
 .Rproj.user/
 rmysql_tutorial.synctex.gz
+.Rproj.user
