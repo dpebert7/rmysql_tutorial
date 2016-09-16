@@ -1,3 +1,8 @@
 rmysql_tutorial.tex
 rmysql_tutorial.log
 rmysql_tutorial-concordance.tex
+.Rhistory
+.RData
+.gitignore.swp
+.Rproj.user/
+rmysql_tutorial.synctex.gz
