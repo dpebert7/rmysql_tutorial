@@ -131,6 +131,8 @@ dbcon = dbConnect(MySQL(), user = 'dangle',
 
 
 
+
+
 \item Now we're ready. First, let's look at the tables in the database, and then the columns in the inventory.
 
 <<>>=
