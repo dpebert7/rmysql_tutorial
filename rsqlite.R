@@ -28,12 +28,16 @@ library(sqldf)
 # Creating a database connection from an R data frame ----
   library(datasets)
   head(state.x77)
+  state_df = as.data.frame(state.x77)
+  state_df$Name = rownames(state.x77)
+  rownames(state_df) <- c()
   
   setwd("~/Desktop")
   newdb <- dbConnect(SQLite(), dbname="test.sqlite")
   
-  dbWriteTable(conn = newdb, name = "state", value = as.data.frame(state.x77), overwrite = TRUE)
+  dbWriteTable(conn = newdb, name = "state", value = state_df, overwrite = TRUE)
   dbListTables(newdb)
   dbReadTable(newdb, "state")
 
-# 
+  
+# Check out a sqlite front end like SQLite Manager (Firefox Extension) to view data from a SQL perspective.
